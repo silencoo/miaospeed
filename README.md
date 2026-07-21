@@ -1,60 +1,182 @@
-# MiaoSpeed 4.0
+# MiaoSpeed 4.3
 
----
+MiaoSpeed 是一个通过 WebSocket 接收任务的网络质量测试后端。它不提供代理能力，而是通过 Vendor 适配器连接节点，执行延迟、吞吐、GeoIP、流媒体脚本等测试。
 
-> miaospeed 于 4.0.0 与 miaoko 分离，正式成为独立的开源项目。一般来说，miaospeed 依然被认为是 miaoko 的专用后端，但也能成为一个通用型后端。
+本分支使用 [Mihomo](https://github.com/MetaCubeX/mihomo) 作为 Clash 内核，以支持包括 `2022-blake3` 在内的现代协议。
 
-## 基本使用方式
+## 环境要求
 
-### 二进制
+- Go 1.21 或更高版本
+- Bash 或 PowerShell
+- OpenSSL（可选，用于生成本地开发 TLS 证书）
 
-关于二进制的使用，本 _README_ 不做赘述，请手动编译或下载预编译文件后执行 `./miaospeed` 查看。
+## 构建
 
-### 编译
+Linux 与 macOS：
 
-由于 miaospeed 中含有部分证书与脚本并未开源，您需要补齐以下文件以成功编译:
+```bash
+bash ./build.sh
+```
 
-1. `./utils/embeded/BUILDTOKEN.key`: 这是 `编译TOKEN`，它用于签名 miaospeed request 的结构体，以防止您的客户端使用不合规的 miaospeed 造成数据不真实的纠纷。您可以随便定义它，例如: `1111|2222|33333333`，不同段用 `|` 切开。
-2. `./preconfigs/embeded/miaokoCA/miaoko.crt`: 当 `-mtls` 启用时，miaospeed 会读取这里的证书让客户端做 TLS 验证。
-3. `./preconfigs/embeded/miaokoCA/miaoko.key`: 同上，这是私钥。(对于这两个您可以自己用 openssl 签一个证书，但它不能用于 miaoko。)
-4. `./preconfigs/embeded/ca-certificates.crt`: miaospeed 自带的根证书集，防止有恶意用户修改系统更证书以作假 TLS RTT。（对于 debian 用户，您可以在安装 `ca-certificates` 包后，在 `/etc/ssl/certs/ca-certificates.crt` 获取这个文件）
-5. `./engine/embeded/predefined.js`: 这个文件定义了 `JavaScript` (流媒体)脚本中一些通用方法，例如 `get()`, `safeStringify()`, `safeParse()`, `println()`，您可以自己实现它们，或者只是新建一个空文件。
-6. `./engine/embeded/default_geoip.js`: 默认的 `geoip` 脚本，需要提供一个 `handler()` 入口函数。如果您不想提供默认的 `geoip` 脚本，则可以直接新建空文件（或者您可以直接拷贝 miaoko 提供的 `geoip` 脚本）。
-7. `./engine/embeded/default_ip.js`: 默认的 `ip_resolve` 脚本，需要提供一个 `ip_resolve_default()` 入口函数，用于获取入口、出口的 IP。如果您不想提供默认的 `ip_resolve` 脚本，则可以直接新建空文件（或者您可以直接拷贝 miaoko 提供的 `geoip` 脚本里的 ip_resolve 函数）。
+Windows PowerShell：
 
-当您新建好以上文件后，就可以运行 `go build .` 构建 `miaospeed` 了。
+```powershell
+.\build.ps1
+```
 
-### 对接方法
+构建结果分别位于：
 
-由于 _miaoko_ 是闭源软件/服务，如果您想在其他服务内对接 miaospeed，可能没有现成的案例。但是，您依然可以参考如下思路:
+- Linux/macOS：`dist/miaospeed.meta`
+- Windows：`dist/miaospeed.meta.exe`
 
-0. miaospeed 对接本质是通过 ws 通道发送指令、传递信息。一般来说，您只需要连接 ws，构建请求结构体，签名请求，接收结果即可。
-1. 连接 ws，这一步很简单，也就不用赘述了。（如果您在客户端强制断开链接，则任务会被自动中止）
-2. 构建请求结构体，参考: https://github.com/miaokobot/miaospeed/blob/fd7abecc2d36a0f18b08f048f9a53b7c0a26bd9e/interfaces/api_request.go#L50
-3. 签名，参考: https://github.com/miaokobot/miaospeed/blob/df6202409e87c5d944ab756608fd31d35390b5c0/utils/challenge.go#L39 其中需要传入两个参数。第一个参数是 `启动TOKEN` （即您启动 miaospeed 时传入的 -token 后的内容），第二个就是在第二步中您构建的结构体 `req`。签名的方法，通俗一些说明就是将结构体转换为 JSON String 然后与 `启动TOKEN` 和 `编译TOKEN` 切片分别累积做 SHA512 HASH。最后，将签名的字符串写入 `req.Challenge` 即可。
-4. 发送完成签名后的请求，您就可以接收返回值了。服务器返回的结构体统一为 https://github.com/miaokobot/miaospeed/blob/fd7abecc2d36a0f18b08f048f9a53b7c0a26bd9e/interfaces/api_response.go#L28
+构建脚本不会修改 `go.mod` 或 `go.sum`。如果系统安装了 OpenSSL，脚本还会在 `dist/certs/` 缺少证书时生成一对开发用自签名证书；已有证书不会被覆盖。
 
-## 版权与协议
+也可以直接构建：
 
-miaospeed 采用 AGPLv3 协议开源，您可以按照 AGPLv3 协议对 miaospeed 进行修改、贡献、分发、乃至商用。但请切记，您必须遵守 AGPLv3 协议下的一切义务，以免发生不必要的法律纠纷。
+```bash
+go build -o dist/miaospeed.meta .
+```
 
-### 主要开源依赖公示
+直接构建使用源码中的公开兼容 build token，且不会生成 TLS 证书。
 
-miaospeed 采用了如下的开源项目:
+## Build token
 
-- Dreamacro/clash [GPLv3]
-- MetaCubeX/Clash.Meta [GPLv3]
-- juju/ratelimit [LGPLv3]
-- dop251/goja [MIT]
-- json-iterator/go [MIT]
-- pion/stun [MIT]
-- go-yaml/yaml [MIT]
-- gorilla/websocket [BSD]
+MiaoSpeed 使用两类 token 对请求签名：
 
-## 抽象设计
+- 启动 token：通过服务端的 `-token` 传入，必须和客户端配置一致。
+- Build token：编译进二进制，必须和客户端的 `buildtoken` 配置一致。
 
-如果您想贡献 miaospeed，您可以参考以下 miaospeed 的抽象设计:
+默认 build token 是公开兼容值，并不应被当作真正的访问凭据。私有部署可以在构建时覆盖它：
 
-- **Matrix**: 数据矩阵 [interfaces/matrix.go]。即用户想要获取的某个数据的最小颗粒度。例如，用户希望了解某个节点的 RTT 延迟，则 TA 可以要求 miaospeed 对 `TEST_PING_RTT` [例如: service/matrices/httpping/matrix.go] 进行测试。
-- **Macro**: 运行时宏任务 [interfaces/macro.go]。如果用户希望批量运行数据矩阵，他们往往会做重复的事情。例如 `TEST_PING_RTT` 与 `TEST_PING_HTTP` 大多数时间都在做相同的事情。如果将两个 _Matrix_ 独立运行，则会浪费大量资源。因此，我们定义了 _Macro_ 最为一个最小颗粒度的执行体。由 _Macro_ 并行完成一系列耗时的操作，随后，_Matrix_ 将解析 _Macro_ 运行得到的数据，以填充自己的内容。
-- **Vendor**: 服务提供商 [interfaces/vendor.go]。miaospeed 本身只是一个测试工具，**它不具备任何代理能力**。因此，_Vendor_ 作为一个接口，为 miaospeed 提供了链接能力。
+```bash
+MIAOSPEED_BUILD_TOKEN='part1|part2|part3' bash ./build.sh
+```
+
+PowerShell：
+
+```powershell
+$env:MIAOSPEED_BUILD_TOKEN = 'part1|part2|part3'
+.\build.ps1
+```
+
+Build token 不再通过 `utils/embeded/BUILDTOKEN.key` 存储，因而不会意外进入 Git 历史。自定义值不能包含空白字符。
+
+## TLS 证书
+
+TLS 私钥不会嵌入源码或二进制。启用 TLS 时必须同时指定证书和私钥：
+
+```bash
+./dist/miaospeed.meta server \
+  -bind 0.0.0.0:8765 \
+  -token 'change-me' \
+  -mtls \
+  -tls-cert ./dist/certs/miaoko.crt \
+  -tls-key ./dist/certs/miaoko.key
+```
+
+`-mtls` 是为兼容已有命令保留的参数名；当前实现启用的是服务端 TLS，并不会验证客户端证书。
+
+构建脚本支持从外部路径复制固定证书，而不是生成开发证书：
+
+```bash
+MIAOSPEED_TLS_CERT_FILE=/run/secrets/miaospeed.crt \
+MIAOSPEED_TLS_KEY_FILE=/run/secrets/miaospeed.key \
+bash ./build.sh
+```
+
+可以通过 `MIAOSPEED_TLS_OUTPUT_DIR` 修改证书输出目录。脚本会验证证书和私钥是否匹配，并将私钥权限设为仅当前用户可读（PowerShell 除外）。
+
+注意：
+
+- 自动生成的是开发用自签名证书，不能替代 miaoko 官方使用的固定证书。
+- 客户端固定证书时，不要反复重新生成；应保存证书对并通过部署环境注入。
+- `dist/` 和旧的嵌入式凭据路径已加入 `.gitignore`。
+
+## 启动服务
+
+最小示例：
+
+```bash
+./dist/miaospeed.meta server \
+  -bind 0.0.0.0:8765 \
+  -token 'change-me'
+```
+
+常用参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `-bind` | TCP 地址或 Unix socket，例如 `0.0.0.0:8765` |
+| `-token` | 客户端和服务端共享的启动 token |
+| `-whitelist` | 允许的 bot ID，多个值以逗号分隔 |
+| `-connthread` | 普通连接测试的并发数，默认 `64` |
+| `-speedlimit` | 速度测试限速，单位 Byte/s；`0` 表示不限制 |
+| `-pausesecond` | 每次速度测试后的暂停秒数 |
+| `-nospeed` | 拒绝所有速度测试任务 |
+| `-mmdb` | 本地 MMDB 文件列表，以逗号分隔 |
+| `-verbose` | 输出详细运行日志；不会记录 token 或完整请求内容 |
+
+查看完整参数：
+
+```bash
+./dist/miaospeed.meta server -help
+```
+
+## GeoIP 数据库
+
+MMDB 数据库体积较大且会定期更新，因此不进入版本控制。下载后可以在启动时指定：
+
+```bash
+./dist/miaospeed.meta server \
+  -bind 0.0.0.0:8765 \
+  -token 'change-me' \
+  -mmdb './mmdb/GeoLite2-ASN.mmdb,./mmdb/GeoLite2-City.mmdb,./mmdb/GeoLite2-Country.mmdb'
+```
+
+程序还提供 MaxMind 更新入口：
+
+```bash
+./dist/miaospeed.meta misc -maxmind-update-license 'your-license-key'
+```
+
+## 脚本测试
+
+使用本地 Vendor 运行 JavaScript 测试：
+
+```bash
+./dist/miaospeed.meta script -file ./example.js
+```
+
+默认脚本位于 `engine/embeded/`，会在编译时嵌入程序。
+
+## 客户端对接
+
+对接流程如下：
+
+1. 建立 WebSocket 连接。
+2. 按 [`interfaces/api_request.go`](interfaces/api_request.go) 构造请求。
+3. 清空 `Challenge` 和 `Vendor` 后序列化请求。
+4. 使用启动 token 与 build token 按 [`utils/challenge.go`](utils/challenge.go) 的算法计算签名。
+5. 将签名写入 `Challenge` 并发送请求。
+6. 按 [`interfaces/api_response.go`](interfaces/api_response.go) 接收进度和最终结果。
+
+客户端强制断开连接时，对应任务会被中止。
+
+## 项目结构
+
+- **Matrix**：单个结果字段，例如 RTT、出口 IP 或平均速度。
+- **Macro**：可被多个 Matrix 复用的一次实际测试任务。
+- **Vendor**：节点连接方式的适配层；MiaoSpeed 本身不提供代理服务。
+
+## 安全说明
+
+- 不要将启动 token、TLS 私钥或生产配置提交到 Git。
+- Build token 只是签名协议的一部分，不能替代启动 token 或网络访问控制。
+- 生产环境应从 secret manager 或受限文件挂载中读取 TLS 私钥。
+- 如果凭据曾推送到公开仓库，仅从最新提交删除并不够，还应轮换凭据并清理历史。
+
+## 许可证
+
+MiaoSpeed 使用 AGPL-3.0 许可证。修改、分发或通过网络提供服务时，请遵守该许可证的相关义务。
+
+主要依赖包括 Mihomo、goja、json-iterator、pion/stun、go-yaml 和 gorilla/websocket；各依赖分别遵循其自身许可证。

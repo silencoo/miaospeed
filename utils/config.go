@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/subtle"
+
 	"github.com/miaokobot/miaospeed/interfaces"
 	"github.com/miaokobot/miaospeed/utils/structs"
 )
@@ -13,6 +15,8 @@ type GlobalConfig struct {
 	PauseSecond      uint
 	ConnTaskTreading uint
 	MiaoKoSignedTLS  bool
+	TLSCertFile      string
+	TLSKeyFile       string
 	NoSpeedFlag      bool
 	MaxmindDB        string
 }
@@ -26,7 +30,8 @@ func (gc *GlobalConfig) InWhiteList(invoker string) bool {
 }
 
 func (gc *GlobalConfig) VerifyRequest(req *interfaces.SlaveRequest) bool {
-	return req.Challenge == gc.SignRequest(req)
+	expectedChallenge := gc.SignRequest(req)
+	return subtle.ConstantTimeCompare([]byte(req.Challenge), []byte(expectedChallenge)) == 1
 }
 
 func (gc *GlobalConfig) SignRequest(req *interfaces.SlaveRequest) string {

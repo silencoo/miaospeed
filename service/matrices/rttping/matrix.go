@@ -20,5 +20,6 @@ func (m *RTTPing) MacroJob() interfaces.SlaveRequestMacroType {
 func (m *RTTPing) Extract(entry interfaces.SlaveRequestMatrixEntry, macro interfaces.SlaveRequestMacro) {
 	if mac, ok := macro.(*ping.Ping); ok {
 		m.Value = mac.RTT
+		m.StdDev = mac.RTTStd
 	}
 }

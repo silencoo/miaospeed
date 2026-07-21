@@ -1,30 +1,33 @@
-# temp files
-temp.png
-
-# built artifacts
-miaoko
-miaospeed
-dist
+# Build artifacts
+/miaospeed
+/miaospeed.meta
+*.exe
+/dist/
 *.tgz
 *.dev.sh
-build.*.sh
-*.mmdb
+/build.*.sh
+go.mod.bak
 
-# configs
+# Local configuration
 test.yaml
 config.yaml
 .history.yaml
 
-# embeded
-*/embeded/*
-!*/embeded/.gitkeep
-!*/embeded/predefined.js
+# Generated or externally supplied credentials
+/utils/embeded/BUILDTOKEN.key
+/preconfigs/embeded/miaokoCA/*.crt
+/preconfigs/embeded/miaokoCA/*.key
+/preconfigs/embeded/miaokoCA/*.pem
 
-# intermediates
-emojis
-history
-fonts
+# Downloaded databases
+*.mmdb
 
-# miscs
+# Runtime/intermediate files
+temp.png
+emojis/
+history/
+fonts/
+
+# OS metadata
 .DS_Store
 ._.DS_Store

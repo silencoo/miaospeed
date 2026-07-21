@@ -147,10 +147,7 @@ func InitServer() {
 		},
 	}
 
-	server := http.Server{
-		Handler:   &wsHandler,
-		TLSConfig: preconfigs.MakeSelfSignedTLSServer(),
-	}
+	server := http.Server{Handler: &wsHandler}
 
 	if strings.HasPrefix(utils.GCFG.Binder, "/") {
 		unixListener, err := net.Listen("unix", utils.GCFG.Binder)
@@ -166,6 +163,12 @@ func InitServer() {
 			os.Exit(1)
 		}
 		if utils.GCFG.MiaoKoSignedTLS {
+			tlsConfig, err := preconfigs.MakeTLSServer(utils.GCFG.TLSCertFile, utils.GCFG.TLSKeyFile)
+			if err != nil {
+				utils.DErrorf("MiaoServer Launch | Cannot configure TLS, error=%s", err.Error())
+				os.Exit(1)
+			}
+			server.TLSConfig = tlsConfig
 			server.ServeTLS(netListener, "", "")
 		} else {
 			server.Serve(netListener)

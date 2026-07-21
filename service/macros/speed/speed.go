@@ -96,9 +96,18 @@ func SingleThread(downloadFiles []string, proxy interfaces.Vendor, timeoutSecond
 			}
 			// download file
 			file := downloadFilesCopy[i%fileLen]
-			resp, _, err := vendors.RequestUnsafe(ctx, proxy, &interfaces.RequestOptions{
-				URL: file,
-			})
+
+			reqOpt := &interfaces.RequestOptions{}
+			reqOpt.URL = file
+			reqOpt.Network = interfaces.ROptionsTCP
+
+			if proxy != nil {
+				utils.DLogf("Speed Test | Proxy Status: type=%v, status=%v", proxy.Type(), proxy.Status())
+			} else {
+				utils.DLogf("Speed Test | Proxy is NIL (Direct Connection)")
+			}
+
+			resp, _, err := vendors.RequestUnsafe(ctx, proxy, reqOpt)
 
 			if !isReady {
 				isReady = true
@@ -113,6 +122,9 @@ func SingleThread(downloadFiles []string, proxy interfaces.Vendor, timeoutSecond
 					bodyReader = resp.Body
 				}
 				io.Copy(ioutil.Discard, io.TeeReader(bodyReader, wc))
+			} else {
+				// 添加错误日志
+				utils.DLogf("Speed Download Error | thread=%d iteration=%d url=%s error=%v", i, i, file, err)
 			}
 			// close body
 			if resp != nil && resp.Body != nil {

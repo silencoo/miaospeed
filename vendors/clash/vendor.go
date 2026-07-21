@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/Dreamacro/clash/constant"
+	"github.com/metacubex/mihomo/constant"
 	"github.com/miaokobot/miaospeed/interfaces"
 )
 
@@ -56,7 +56,7 @@ func (c *Clash) DialUDP(ctx context.Context, url string) (net.PacketConn, error)
 		return nil, fmt.Errorf("cannot build udp context")
 	}
 
-	return c.proxy.DialUDP(&addr)
+	return c.proxy.ListenPacketContext(ctx, &addr)
 
 }
 func (c *Clash) ProxyInfo() interfaces.ProxyInfo {

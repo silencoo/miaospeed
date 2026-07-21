@@ -127,9 +127,9 @@ func pingViaNetCat(ctx context.Context, p interfaces.Vendor, url string) (uint16
 	return uint16(httpEnd - httpStartReq2), uint16(httpStartReq2 - connStart), nil
 }
 
-func ping(p interfaces.Vendor, url string, withAvg uint16, maxAttempt int, timeout uint) (uint16, uint16) {
+func ping(p interfaces.Vendor, url string, withAvg uint16, maxAttempt int, timeout uint) (uint16, uint16, uint16) {
 	if p == nil {
-		return 0, 0
+		return 0, 0, 0
 	}
 
 	failNum := 0
@@ -157,10 +157,11 @@ func ping(p interfaces.Vendor, url string, withAvg uint16, maxAttempt int, timeo
 		cancel()
 	}
 
-	resultRTT, result := uint16(0), uint16(0)
+	resultRTT, result, resultStd := uint16(0), uint16(0), uint16(0)
 	if len(totalMSRTT) >= int(withAvg) {
 		resultRTT = computeAvgOfPing(totalMSRTT)
 		result = computeAvgOfPing(totalMS)
+		resultStd = computeStdOfPing(totalMSRTT, resultRTT)
 	}
-	return resultRTT, result
+	return resultRTT, result, resultStd
 }

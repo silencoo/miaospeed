@@ -18,7 +18,9 @@ func InitConfigServer() *utils.GlobalConfig {
 	sflag.UintVar(&gcfg.ConnTaskTreading, "connthread", 64, "parallel threads when processing normal connectivity tasks")
 	sflag.Uint64Var(&gcfg.SpeedLimit, "speedlimit", 0, "speed ratelimit (in Bytes per Second), default with no limits")
 	sflag.UintVar(&gcfg.PauseSecond, "pausesecond", 0, "pause such period after each speed job (seconds)")
-	sflag.BoolVar(&gcfg.MiaoKoSignedTLS, "mtls", false, "enable miaoko certs for tls verification")
+	sflag.BoolVar(&gcfg.MiaoKoSignedTLS, "mtls", false, "enable TLS using -tls-cert and -tls-key")
+	sflag.StringVar(&gcfg.TLSCertFile, "tls-cert", "", "path to the PEM-encoded TLS certificate")
+	sflag.StringVar(&gcfg.TLSKeyFile, "tls-key", "", "path to the PEM-encoded TLS private key")
 	sflag.BoolVar(&gcfg.NoSpeedFlag, "nospeed", false, "decline all speedtest requests")
 	sflag.StringVar(&gcfg.MaxmindDB, "mmdb", "", "reroute all geoip query to local mmdbs. for example: test.mmdb,testcity.mmdb")
 

@@ -35,6 +35,7 @@ type GeoInfo struct {
 	ASN           int     `json:"asn"`
 	ASNOrg        string  `json:"asn_organization"`
 	Country       string  `json:"country"`
+	City          string  `json:"city"`
 	IP            string  `json:"ip"`
 	ContinentCode string  `json:"continent_code"`
 	CountryCode   string  `json:"country_code"`

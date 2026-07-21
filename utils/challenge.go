@@ -39,6 +39,8 @@ func hashMd5(token string) string {
 func SignRequest(token string, req *interfaces.SlaveRequest) string {
 	awaitSigned := req.Clone()
 	awaitSigned.Challenge = ""
+	// Keep the signed payload compatible with clients that do not set Vendor.
+	awaitSigned.Vendor = ""
 	awaitSignedStr, _ := jsoniter.MarshalToString(&awaitSigned)
 	awaitSignedStr = strings.TrimSpace(awaitSignedStr)
 	return hashMiaoSpeed(token, awaitSignedStr)

@@ -3,18 +3,23 @@ package preconfigs
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 )
 
-func MakeSelfSignedTLSServer() *tls.Config {
-	cert, _ := tls.X509KeyPair([]byte(MIAOKO_TLS_CRT), []byte(MIAOKO_TLS_KEY))
-
-	// Construct a tls.config
-	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		// Other options
+func MakeTLSServer(certFile, keyFile string) (*tls.Config, error) {
+	if certFile == "" || keyFile == "" {
+		return nil, fmt.Errorf("both TLS certificate and key files are required")
 	}
 
-	return tlsConfig
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, fmt.Errorf("load TLS certificate pair: %w", err)
+	}
+
+	return &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		MinVersion:   tls.VersionTLS12,
+	}, nil
 }
 
 func MiaokoRootCAPrepare() *x509.CertPool {

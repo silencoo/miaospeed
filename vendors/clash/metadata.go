@@ -1,9 +1,11 @@
 package clash
 
 import (
+	"net/netip"
 	"net/url"
+	"strconv"
 
-	"github.com/Dreamacro/clash/constant"
+	"github.com/metacubex/mihomo/constant"
 )
 
 func urlToMetadata(rawURL string, network constant.NetWork) (addr constant.Metadata, err error) {
@@ -24,11 +26,15 @@ func urlToMetadata(rawURL string, network constant.NetWork) (addr constant.Metad
 		}
 	}
 
+	// Convert port string to uint16
+	p, _ := strconv.Atoi(port)
+	portNum := uint16(p)
+
 	addr = constant.Metadata{
 		NetWork: network,
 		Host:    u.Hostname(),
-		DstIP:   nil,
-		DstPort: port,
+		DstIP:   netip.Addr{},
+		DstPort: portNum,
 	}
 	return
 }

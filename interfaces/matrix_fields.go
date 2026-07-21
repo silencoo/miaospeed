@@ -8,6 +8,7 @@ type HTTPPingDS struct {
 
 type RTTPingDS struct {
 	Value uint16
+	StdDev uint16
 }
 
 type AverageSpeedDS struct {

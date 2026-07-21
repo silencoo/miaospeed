@@ -1,8 +1,8 @@
 package clash
 
 import (
-	"github.com/Dreamacro/clash/adapter"
-	"github.com/Dreamacro/clash/constant"
+	"github.com/metacubex/mihomo/adapter"
+	"github.com/metacubex/mihomo/constant"
 	"github.com/miaokobot/miaospeed/interfaces"
 	"github.com/miaokobot/miaospeed/utils"
 	"gopkg.in/yaml.v2"
@@ -14,7 +14,8 @@ func parseProxy(proxyName, proxyPayload string) constant.Proxy {
 	proxy, err := adapter.ParseProxy(payload)
 
 	if err != nil {
-		utils.DLogf("Vendor Parser | Parse clash profile error, error=%v", err.Error())
+		utils.DErrorf("Vendor Parser | Parse clash profile error! proxyName=%s, error=%v", proxyName, err.Error())
+		utils.DLogf("Vendor Parser | Failed Payload: %s", proxyPayload)
 	}
 
 	return proxy

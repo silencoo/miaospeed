@@ -64,6 +64,7 @@ func (sr *SlaveRequest) Clone() *SlaveRequest {
 		Basics:         *sr.Basics.Clone(),
 		Options:        *sr.Options.Clone(),
 		Configs:        *sr.Configs.Clone(),
+		Vendor:         sr.Vendor,
 		Nodes:          cloneSlice(sr.Nodes),
 		RandomSequence: sr.RandomSequence,
 		Challenge:      sr.Challenge,
